@@ -1,8 +1,4 @@
-// === BEGINNER: copy this into the STUDENT AREA of sketch.js ===
-// Don't worry about the other code — this is all you need to try the game.
-
-// Keep engine collisions on so the game works automatically
-// (use the API `setManualCollision` on the `game` instance)
+// Beginner copy: paste into the STUDENT AREA of sketch.js
 
 function setup() {
   // Make the game window (do not change these numbers yet)
@@ -33,6 +29,9 @@ function draw() {
   background(0);
   game.update();
   game.show();
+  // One-line example:
+  // if (game.paddleHit === 'left') { game.bounceRight(); game.clearPaddleHit(); }
+  // Tip: game.reflectFromPaddle('left') works and auto-nudges the ball.
 }
 
 // Now open index.html and play: use W/S to move the left paddle, and

@@ -1,3 +1,98 @@
+## Pong Lab — Student Worksheet (simple)
+
+Estimated time: 15–30 minutes. Copy the short examples into the STUDENT AREA at the top of `sketch.js`.
+
+Setup (teacher)
+
+- Serve the folder and open `index.html` in a browser:
+
+```bash
+python3 -m http.server 8000
+# open http://localhost:8000
+```
+
+Controls: W/S (left paddle), Up/Down (right paddle).
+
+Starter (automatic collisions + scoring)
+
+```js
+// STUDENT AREA
+let game = new PongGame({ manualCollision: false });
+game.setupScoring();
+
+function draw() {
+  background(30);
+  game.update();
+  game.show();
+}
+```
+
+Task 1 — Run & Observe (3–5 minutes)
+
+- Paste the starter into the STUDENT AREA, save, refresh, and play. Notice bounces and paddle movement.
+
+Task 2 — Change paddles & colours (5 minutes)
+
+- After creating `game`, try these lines to move paddles and change colours:
+
+```js
+game.setLeftPaddle(30, height / 2 - 25);
+game.setRightPaddle(width - 40, height / 2 - 25);
+game.setPaddleColors("#66ccff", "#ffcc66");
+```
+
+Task 3 — Make paddles faster (3–5 minutes)
+
+- Try:
+
+```js
+game.setPaddleSpeed(8);
+```
+
+Optional Task 4 — Manual collisions (10–12 minutes)
+
+- Use this when teaching contact -> reflection. Note: top/bottom walls are still handled by the engine.
+
+```js
+let game = new PongGame({ manualCollision: true });
+
+function draw() {
+  background(30);
+  game.update();
+  game.show();
+
+  const ph = game.checkPaddleHit();
+  if (ph === "left") game.reflectFromPaddle("left");
+  else if (ph === "right") game.reflectFromPaddle("right");
+}
+```
+
+Notes
+
+- `game.reflectFromPaddle(side)` will use the engine's current ball position if you omit the contact Y and will nudge the ball out of the paddle.
+- Top/bottom wall bounces remain automatic so students don't need to implement wall logic.
+- To increment scores in manual mode call `game.player1Scored()` / `game.player2Scored()` (these do not reset the ball).
+
+One-line example
+
+```js
+const hit = game.consumePaddleHit();
+if (hit === "left") game.bounceRight();
+```
+
+Teacher hints
+
+- Start with the automatic starter for novices, then switch to the manual example after a few minutes of play.
+- Use `consumePaddleHit()` in group activities so events are cleared automatically.
+
+Files edited in this worksheet
+
+- `sketch.js` (student area)
+
+---
+
+If you want a printable one-page handout from this worksheet, tell me and I will create it.
+
 ## Pong Lab — 15–30 minute Student Worksheet
 
 Estimated time: 15–30 minutes (pick a 15-minute quick run or expand to ~30 with the bonus challenge).
@@ -48,7 +143,8 @@ Task 2 — Change paddle positions & colours (5 minutes)
 - Edit your STUDENT AREA to include these lines after constructing the game:
 
 ```js
-game.setPaddlesXY(30, height / 2 - 40, width - 40, height / 2 - 40);
+game.setLeftPaddle(30, height / 2 - 40);
+game.setRightPaddle(width - 40, height / 2 - 40);
 game.setPaddleColors("#66ccff", "#ffcc66");
 ```
 
@@ -85,17 +181,20 @@ function draw() {
   // Let the engine update its ball position (but don't auto-bounce)
   game.update();
 
-  // Check for a paddle hit; if detected, reflect the ball
-  if (game.checkPaddleHit()) {
-    // reflectFromPaddle expects (side, contactY)
-    // side is 'left' or 'right' (string) — the helper returns these for you
-    // contactY is the y-coordinate of where the ball hit the paddle
-    const hit = game._lastPaddleHit; // engine sets this when checkPaddleHit() is true
-    // convenience helper to reflect the ball using paddle contact point
-    game.reflectFromPaddle(hit.side, hit.contactY);
+  // Check for a paddle hit; if detected, reflect the ball.
+  // The engine helper `reflectFromPaddle()` now accepts just the side
+  // and will use the engine's internal ball Y when you omit the contactY.
+  const ph = game.checkPaddleHit();
+  if (ph === "left") {
+    // reflectFromPaddle will also nudge the ball out of the paddle for you
+    game.reflectFromPaddle("left");
+  } else if (ph === "right") {
+    game.reflectFromPaddle("right");
   }
 
-  // walls are still handled by the engine (or you can check them manually)
+  // Important: top/bottom wall bounces remain automatic even when
+  // `manualCollision:true` — the engine will handle top/bottom wall bounces
+  // and nudging so students don't need to implement wall logic.
   game.show();
 }
 
@@ -123,11 +222,18 @@ function draw() {
   }
 }
 */
+
+// --- Very short one-line example for beginners ---
+// Students can copy this into `draw()` to react to hits without math:
+// if (game.paddleHit === 'left') { game.bounceRight(); game.clearPaddleHit(); }
+// Or use the consume pattern:
+// const hit = game.consumePaddleHit(); if (hit === 'left') game.bounceRight();
 ```
 
 - Hints:
   - If `game.checkPaddleHit()` returns true, the engine records a small `game._lastPaddleHit` object with `{ side, contactY }`.
   - `reflectFromPaddle(side, contactY)` adjusts ball angle based on where it hit the paddle.
+  - For younger students: instead of writing collision detection, call `game.manualCollisionAssist()` inside `draw()` — it will detect paddle/wall hits, reflect the ball using the engine helpers, and return `{ hit, contactFraction }`. This gives students an easier entry point while they experiment with paddle position, colours, and speeds.
 
 Task 5 — Add a “serve” key (5 minutes)
 
@@ -155,7 +261,8 @@ Solutions & Hints (short)
 
 ```js
 let game = new PongGame({ manualCollision: false });
-game.setPaddlesXY(30, height / 2 - 40, width - 40, height / 2 - 40);
+game.setLeftPaddle(30, height / 2 - 40);
+game.setRightPaddle(width - 40, height / 2 - 40);
 game.setPaddleColors("#66ccff", "#ffcc66");
 function draw() {
   background(30);

@@ -63,7 +63,6 @@ try {
 
   // Check the canonical public API methods exist
   const expected = [
-    "setPaddlesXY",
     "setLeftPaddle",
     "setRightPaddle",
     "setPaddleColors",
@@ -92,20 +91,24 @@ try {
   });
 
   // Call a few methods to ensure they run without throwing
-  game.setPaddlesXY(10, 10, 380, 10);
+  game.setLeftPaddle(10, 10);
+  game.setRightPaddle(380, 10);
   game.setBallSpeed(4);
   game.setPaddleSpeed(5);
   game.setPaddleCollisionEnabled(false);
   game.setWallBounceEnabled(false);
   game.update();
 
-  // Construct with the manualCollision option and verify it disables engine collisions
+  // Construct with the manualCollision option and verify it disables paddle collisions
   const game2 = new (vm.runInContext("PongGame", context))({
     manualCollision: true,
   });
-  if (game2.usePaddleCollision !== false || game2.useWallBounce !== false) {
+  // When manualCollision:true we expect the engine to disable paddle collisions
+  // so students can implement their own paddle logic, but top/bottom wall
+  // bounce remains enabled so students don't need to handle wall bounces.
+  if (game2.usePaddleCollision !== false || game2.useWallBounce !== true) {
     throw new Error(
-      "Constructor option { manualCollision: true } should disable engine collisions"
+      "Constructor option { manualCollision: true } should disable paddle collisions but keep wall bounce enabled"
     );
   }
 

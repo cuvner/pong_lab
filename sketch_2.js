@@ -1,13 +1,11 @@
-// =============================
-// 🎮 STUDENT AREA (EDIT THIS)
-// =============================
-
-// Example toggle: flip to false to use engine automatic collisions
+// STUDENT AREA
+// Set true to practice manual collisions; engine otherwise handles collisions.
 let manualCollisionExample = true;
 
-// Game + scores
+// Quick example:
+// if (game.paddleHit === 'left') { game.bounceRight(); game.clearPaddleHit(); }
+
 let game;
-// scores are handled by the engine when enabled; use game.score1 / game.score2
 
 function setup() {
   createCanvas(400, 300);
@@ -15,10 +13,12 @@ function setup() {
 
   // --- initial settings students can tweak ---
   // Place paddles using X,Y (left paddle, right paddle)
-  game.setPaddlesXY(10, height / 2 - 25, width - 20, height / 2 - 25);
+  game.setLeftPaddle(10, height / 2 - 25);
+  game.setRightPaddle(width - 20, height / 2 - 25);
 
   // Or try moving them inward/outward:
-  // game.setPaddlesXY(30, 100, width - 40, 100);
+  // game.setLeftPaddle(30, 100);
+  // game.setRightPaddle(width - 40, 100);
 
   game.setPaddleColors("cyan", "magenta");
 
@@ -26,15 +26,8 @@ function setup() {
   game.setBallSpeed(4); // ball movement magnitude
   game.setPaddleSpeed(5); // how fast paddles move when keys pressed
 
-  // Example mode: students do detection & bouncing themselves
-  if (manualCollisionExample) {
-    game.setPaddleCollisionEnabled(false);
-    game.setWallBounceEnabled(false);
-  } else {
-    // Use engine automatic collisions
-    game.setPaddleCollisionEnabled(true);
-    game.setWallBounceEnabled(true);
-  }
+  // Toggle manual/automatic collision mode
+  game.setManualCollision(manualCollisionExample);
 
   // Initialise scoring if appropriate (setupScoring will be a no-op in manual mode)
   game.setupScoring();
@@ -55,27 +48,14 @@ function draw() {
     const ph = game.checkPaddleHit(); // "left", "right", or "none"
     if (ph === "left") {
       // Use the helper that reflects based on contact position.
-      // Pass 'left' and the contact Y (we use game.ballY).
-      game.reflectFromPaddle("left", game.ballY);
-      // Nudge the ball just outside the paddle to avoid repeated triggers:
-      game.ballX = game.paddle1X + game.paddleW + game.ballRadius + 1;
+      // You can omit the contactY — the engine will use its internal ball Y.
+      game.reflectFromPaddle("left");
     } else if (ph === "right") {
-      game.reflectFromPaddle("right", game.ballY);
-      game.ballX = game.paddle2X - game.ballRadius - 1;
+      game.reflectFromPaddle("right");
     }
 
-    // 2) Wall detection (top/bottom)
-    const wh = game.checkWallHit(); // "top", "bottom", "left", "right", or "none"
-    if (wh === "top" || wh === "bottom") {
-      // simple vertical bounce helper
-      game.bounceVertical();
-      // Nudge the ball inside the canvas:
-      if (wh === "top") {
-        game.ballY = game.ballRadius + 1;
-      } else {
-        game.ballY = height - game.ballRadius - 1;
-      }
-    }
+    // 2) Top/bottom walls are handled by the engine automatically so
+    // students don't need to implement wall detection or nudging here.
   }
 
   // Draw scores if scoring is enabled on the engine

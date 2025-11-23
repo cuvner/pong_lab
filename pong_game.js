@@ -39,11 +39,17 @@ class PongGame {
     this.score1 = 0;
     this.score2 = 0;
 
+    // Simple state properties for classroom use. Students can read these
+    // inside `draw()` and call simple helpers like `game.bounceRight()`.
+    this.paddleHit = "none"; // 'left'|'right'|'none'
+    this.wallHit = "none"; // 'left'|'right'|'top'|'bottom'|'none'
+
     // Honor constructor option to disable automatic collisions for manual handling
     if (options && options.manualCollision) {
-      // disable automatic engine collisions when manual collision mode requested
+      // disable automatic paddle collisions when manual collision mode requested
+      // but keep top/bottom wall bounce enabled so students don't need to
+      // implement wall bounces themselves.
       this.setPaddleCollisionEnabled(false);
-      this.setWallBounceEnabled(false);
       this.manualCollision = true;
     } else {
       this.manualCollision = false;
@@ -87,16 +93,7 @@ class PongGame {
 
   // ============= PUBLIC METHODS (for students) =============
 
-  // Set both paddles at once (Y positions)
-  // --- Canonical public API (preferred names) ---
-  // Set both paddles' X and Y positions
-  setPaddlesXY(p1X, p1Y, p2X, p2Y) {
-    this.paddle1X = constrain(p1X, 0, width - this.paddleW);
-    this.paddle1Y = constrain(p1Y, 0, height - this.paddleH);
-
-    this.paddle2X = constrain(p2X, 0, width - this.paddleW);
-    this.paddle2Y = constrain(p2Y, 0, height - this.paddleH);
-  }
+  // (Individual paddle setters below — setPaddlesXY removed)
 
   // Set left (player 1) paddle X,Y
   setLeftPaddle(x, y) {
@@ -129,9 +126,9 @@ class PongGame {
   // (useful for student examples that implement collisions manually).
   setManualCollision(enabled) {
     const m = !!enabled;
-    // If manual is true, disable engine collision/bounce; otherwise enable them.
+    // If manual is true, disable engine paddle collisions only; keep
+    // top/bottom wall bounce enabled so students don't need to handle walls.
     this.setPaddleCollisionEnabled(!m);
-    this.setWallBounceEnabled(!m);
     this.manualCollision = m;
   }
 
@@ -142,6 +139,41 @@ class PongGame {
 
   bounceVertical() {
     this.ballYSpeed *= -1;
+  }
+
+  // Simple helpers for classroom use (explicit directions)
+  bounceRight() {
+    const speed = Math.hypot(this.ballXSpeed, this.ballYSpeed) || 3;
+    this.ballXSpeed = Math.abs(this.ballXSpeed) || Math.max(1, speed);
+  }
+
+  bounceLeft() {
+    const speed = Math.hypot(this.ballXSpeed, this.ballYSpeed) || 3;
+    this.ballXSpeed = -Math.abs(this.ballXSpeed) || -Math.max(1, speed);
+  }
+
+  bounceTop() {
+    const speed = Math.hypot(this.ballXSpeed, this.ballYSpeed) || 3;
+    this.ballYSpeed = -Math.abs(this.ballYSpeed) || -Math.max(1, speed);
+  }
+
+  bounceBottom() {
+    const speed = Math.hypot(this.ballXSpeed, this.ballYSpeed) || 3;
+    this.ballYSpeed = Math.abs(this.ballYSpeed) || Math.max(1, speed);
+  }
+
+  // Convenience helpers for simple student workflows
+  // consumePaddleHit(): returns the current paddleHit value and clears it
+  // so student code can do: const hit = game.consumePaddleHit(); if (hit==='left') { game.bounceRight(); }
+  consumePaddleHit() {
+    const h = this.paddleHit || "none";
+    this.paddleHit = "none";
+    return h;
+  }
+
+  // clearPaddleHit(): clear the current paddleHit without reading it
+  clearPaddleHit() {
+    this.paddleHit = "none";
   }
 
   // Convenience bounce by descriptor
@@ -178,12 +210,11 @@ class PongGame {
       paddleYCenter = this.paddle2Y + this.paddleH / 2;
     }
 
+    // If contactY not provided, use the current ball Y from the engine
+    const cY = typeof contactY === "number" ? contactY : this.ballY;
+
     // Relative hit position (-1 at top edge, 0 center, +1 bottom edge)
-    const rel = constrain(
-      (contactY - paddleYCenter) / (this.paddleH / 2),
-      -1,
-      1
-    );
+    const rel = constrain((cY - paddleYCenter) / (this.paddleH / 2), -1, 1);
 
     // Max deflection angle from horizontal (degrees)
     const maxDeg = 75;
@@ -200,6 +231,13 @@ class PongGame {
 
     this.ballXSpeed = Math.cos(angle) * speed * dir;
     this.ballYSpeed = Math.sin(angle) * speed;
+    // Nudge the ball slightly out of the paddle to avoid immediate re-trigger
+    // when students call this helper directly from their sketches.
+    if (s === "left") {
+      this.ballX = this.paddle1X + this.paddleW + this.ballRadius + 1;
+    } else if (s === "right") {
+      this.ballX = this.paddle2X - this.ballRadius - 1;
+    }
   }
 
   // Change ball speed (keeps current direction)
@@ -221,6 +259,105 @@ class PongGame {
   // returns "left", "right" or "none"
   checkPaddleHit() {
     return this._detectPaddleHit();
+  }
+
+  // Convenience for younger students: return normalized contact fraction
+  // -1 => top edge, 0 => center, +1 => bottom edge
+  // Accepts 'left' or 'right' (or 1/2). Returns null when side is invalid.
+  getPaddleContactFraction(side) {
+    const s = String(side).toLowerCase();
+    let paddleYCenter;
+    if (s === "left" || s === "1") {
+      paddleYCenter = this.paddle1Y + this.paddleH / 2;
+    } else if (s === "right" || s === "2") {
+      paddleYCenter = this.paddle2Y + this.paddleH / 2;
+    } else {
+      return null;
+    }
+    const rel = constrain(
+      (this.ballY - paddleYCenter) / (this.paddleH / 2),
+      -1,
+      1
+    );
+    return rel;
+  }
+
+  // Assisted manual collision helper for younger students.
+  // Call this inside `draw()` when you have `manualCollision` enabled.
+  // It will detect paddle and wall hits, apply the engine's reflection
+  // helpers, nudge the ball out of paddles to avoid repeat triggers,
+  // and return a small object describing the event:
+  // { hit: 'left'|'right'|'top'|'bottom'|'none', contactFraction }
+  manualCollisionAssist() {
+    // Paddle hits
+    const ph = this._detectPaddleHit();
+    if (ph === "left") {
+      this.reflectFromPaddle("left", this.ballY);
+      this.ballX = this.paddle1X + this.paddleW + this.ballRadius + 1;
+      return {
+        hit: "left",
+        contactFraction: this.getPaddleContactFraction("left"),
+      };
+    } else if (ph === "right") {
+      this.reflectFromPaddle("right", this.ballY);
+      this.ballX = this.paddle2X - this.ballRadius - 1;
+      return {
+        hit: "right",
+        contactFraction: this.getPaddleContactFraction("right"),
+      };
+    }
+
+    // Top/bottom walls
+    const wh = this._detectWallHit();
+    if (wh === "top" || wh === "bottom") {
+      this.bounceVertical();
+      if (wh === "top") this.ballY = this.ballRadius + 1;
+      else this.ballY = height - this.ballRadius - 1;
+      return { hit: wh, contactFraction: null };
+    }
+
+    // No collision
+    return { hit: "none", contactFraction: null };
+  }
+
+  // Simple collision+scoring step: a single-call helper that detects
+  // paddle/wall hits, applies reflection, and optionally handles scoring.
+  // Usage: const result = game.simpleCollisionStep({ autoScore: true, autoReset: true });
+  // Returns { hit, contactFraction, scored: 'left'|'right'|'none' }
+  simpleCollisionStep(options = {}) {
+    const { autoScore = false, autoReset = false } = options;
+
+    // First handle paddles & walls using the assist helper
+    const assist = this.manualCollisionAssist();
+    if (
+      assist.hit === "left" ||
+      assist.hit === "right" ||
+      assist.hit === "top" ||
+      assist.hit === "bottom"
+    ) {
+      // If a left/right wall was hit earlier, manualCollisionAssist would have returned 'none'
+      // so scoring handled below via wall detection.
+    }
+
+    // Check for left/right scoring walls explicitly
+    const wall = this._detectWallHit();
+    if (wall === "left" || wall === "right") {
+      if (autoScore) {
+        // engine internal scoring increments and resets ball
+        if (wall === "left") this._scorePoint(2);
+        else this._scorePoint(1);
+        return { hit: wall, contactFraction: null, scored: wall };
+      } else {
+        // do not reset; let caller increment via player1Scored/player2Scored
+        return { hit: wall, contactFraction: null, scored: "none" };
+      }
+    }
+
+    return {
+      hit: assist.hit,
+      contactFraction: assist.contactFraction,
+      scored: "none",
+    };
   }
 
   // Check which wall (if any) was hit
@@ -254,6 +391,9 @@ class PongGame {
 
   update() {
     this._moveBall();
+    // expose simple state for students to read
+    this.paddleHit = this._detectPaddleHit();
+    this.wallHit = this._detectWallHit();
     if (this.useWallBounce) {
       this._autoWallBounce();
     }
@@ -389,7 +529,7 @@ class PongGame {
 
   // Scoring internal helpers
   _handleScoring() {
-    const wall = this._detectWallHit();
+    const wall = this.wallHit || this._detectWallHit();
     if (wall === "left") {
       // Right player scored
       this._scorePoint(2);

@@ -106,19 +106,17 @@ function draw() {
 
   const ph = game.checkPaddleHit();
   if (ph === "left") {
-    game.reflectFromPaddle("left", game.ballY);
-    game.ballX = game.paddle1X + game.paddleW + game.ballRadius + 1;
+    // engine can infer the contact Y from its internal ball position
+    // and will nudge the ball out of the paddle automatically, so you
+    // don't need to set `game.ballX` yourself.
+    game.reflectFromPaddle("left");
   } else if (ph === "right") {
-    game.reflectFromPaddle("right", game.ballY);
-    game.ballX = game.paddle2X - game.ballRadius - 1;
+    game.reflectFromPaddle("right");
   }
 
-  const wh = game.checkWallHit();
-  if (wh === "top" || wh === "bottom") {
-    game.bounceVertical();
-    if (wh === "top") game.ballY = game.ballRadius + 1;
-    else game.ballY = height - game.ballRadius - 1;
-  }
+  // Top/bottom wall bounces are handled by the engine automatically even
+  // when `manualCollision:true` is set — students don't need to implement
+  // these checks or nudge the ball themselves.
 }
 ```
 
@@ -146,273 +144,212 @@ function draw() {
 
 The engine will draw scores in `game.show()` whenever `game.scoringEnabled` is true or when scores are non-zero.
 
+### Easier manual-collision for younger students
+
+If manual collision is too verbose for your class, use the engine's assisted helpers so students don't need to write detection math. Two helpers are available:
+
+- `game.manualCollisionAssist()` — call this inside `draw()` when `manualCollision:true`. It will detect paddle and wall hits, apply the engine's reflection helpers, nudge the ball out of paddles to avoid repeated triggers, and return `{ hit, contactFraction }` where `contactFraction` is -1..+1 (top..bottom) for paddle hits.
+
+- `game.simpleCollisionStep({ autoScore, autoReset })` — a single-call helper that runs the assisted collision step and optionally handles scoring/reset when `autoScore` is true. It returns `{ hit, contactFraction, scored }`.
+
+Example assisted usage (copy into STUDENT AREA when using `manualCollision:true`):
+
+```javascript
+function draw() {
+  background(0);
+  game.update();
+  // Assisted collisions for beginners — safe and simple
+  const res = game.manualCollisionAssist();
+  // res.hit is 'left'|'right'|'top'|'bottom'|'none'
+  // res.contactFraction is -1..+1 for paddle hits
+  game.show();
+}
+```
+
+Or, for one-call collision+scoring handling:
+
+```javascript
+function draw() {
+  background(0);
+  game.update();
+  const out = game.simpleCollisionStep({ autoScore: true });
+  // out.scored === 'left'|'right' if a point was auto-scored
+  game.show();
+}
+```
+
+### One-line student example (very simple)
+
+Give beginners a single easy line to copy into `draw()` that reacts to paddle hits:
+
+```javascript
+if (game.paddleHit === "left") {
+  game.bounceRight();
+  game.clearPaddleHit();
+}
+```
+
+If you'd rather avoid having students remember to clear the event, use the consume pattern:
+
+```javascript
+const hit = game.consumePaddleHit();
+if (hit === "left") game.bounceRight();
+```
+
+Teacher note: prefer `consumePaddleHit()` in group exercises — it guarantees the event is cleared and avoids duplicate reactions if students forget to call `clearPaddleHit()`.
+
 ## Short API reference
 
-- `new PongGame({ manualCollision: true|false })` — construct the engine; setting `manualCollision:true` disables automatic collisions.
+- `new PongGame({ manualCollision: true|false })` — construct the engine; setting `manualCollision:true` disables automatic paddle collisions so students can implement paddle-contact logic themselves. Top/bottom wall bounce remains handled by the engine so students don't need to implement wall bounces.
 - `game.setManualCollision(enabled)` — toggle manual/automatic collisions at runtime.
 - `game.setupScoring()` — initialise engine-managed scoring (no-op in manual mode).
 - `game.setScoringEnabled(enabled)` — set scoring on/off (respects manualCollision).
 - `game.player1Scored()` / `game.player2Scored()` — increment scores manually (do NOT reset the ball).
-- `game.score1` / `game.score2` — numeric score values maintained by the engine.
-- `game.checkPaddleHit()`, `game.checkWallHit()`, `game.resetBall()`, `game.reflectFromPaddle(side, contactY)`, `game.setPaddleSpeed(...)`, `game.setBallSpeed(...)`, `game.setPaddleColors(...)`, `game.setLeftPaddle(x,y)`, `game.setRightPaddle(x,y)`, `game.setPaddlesXY(...)`
 
-## Notes & tips
+# pong_lab — teacher quickstart
 
-- `game` is created in `sketch.js` inside `setup()` — don't call its methods before `setup()` runs.
-- For beginner lessons use the constructor option `new PongGame({ manualCollision:false })` and `game.setupScoring()` so students get an immediately playable game with scoring.
-- Use manual mode (`manualCollision:true`) when teaching collision geometry — it leaves the ball in-play and gives students a clearer view of contact -> reflection.
+This is a tiny Pong teaching lab built with p5.js. The engine is in `pong_game.js` and students edit the `STUDENT AREA` at the top of `sketch.js`.
 
-If you'd like, I can also add a printable handout layout or an on-screen toggle for scoring/reset in `sketch.js` for classroom demos.
-// To let the engine manage scoring automatically, call `game.setupScoring()` in `setup()`
-// (only when `manualCollision` is false). The engine will increment `game.score1`
-// / `game.score2` and reset the ball when a point is scored. Example display:
+Quick goals for teachers
 
-# pong_lab
+- Run the sketches in a browser and let students edit the top of `sketch.js`.
+- Use `manualCollision:true` to teach collision geometry (students handle paddle hits).
+- Keep top/bottom wall bounces and basic scoring handled by the engine so lessons stay simple.
 
-Simple Pong teaching lab built with p5.js. The repo contains a small, student-editable `sketch.js` and the game engine in `pong_game.js`.
+Run locally
 
-## Quick run
-
-Open `index.html` in a browser, or serve the folder and visit the local server address. Example (from project root):
+1. From the repo folder run:
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000
+# Open http://localhost:8000 in a browser
 ```
 
-The page loads p5.js and `sketch.js`. The `PongGame` class is defined in `pong_game.js` and is available to the sketch as the global `game` variable after `setup()` runs.
+Simple copy-paste examples (put these in the STUDENT AREA in `sketch.js`)
 
-// Manual-focused variant: constructs the game with manual collision enabled
-// so students can practice detecting collisions themselves. If you want
-// the automatic collisions instead, use the other beginner block.
-function setup() {
-createCanvas(400, 300);
-
-// Primary for manual lesson: start in manual mode
-game = new PongGame({ manualCollision: true });
-
-// Make the paddles easier to see and control
-game.setPaddleColors("red", "blue"); // left is red, right is blue
-game.setPaddleSpeed(5); // how fast the paddles move with keys
-game.setBallSpeed(4); // how fast the ball moves overall
-}
-
-- Set both paddles' X,Y coordinates. Values are constrained to keep paddles fully on-screen.
-
-- setLeftPaddle(x, y)
-
-  - Set left paddle (player 1) X,Y.
-
-- setRightPaddle(x, y)
-
-  - Set right paddle (player 2) X,Y.
-
-- setPaddleColors(left, right)
-
-  - Set paddle colours (US spelling). Accepts any input supported by p5's `color()`.
-
-- setBallSpeed(speed)
-
-  - Set the ball's speed magnitude (preserves direction signs).
-
-- setPaddleSpeed(speed)
-
-  - Set how fast paddles move in pixels per frame when keys are pressed.
-
-- setPaddleCollisionEnabled(enabled)
-
-  - Enable or disable automatic paddle collision handling (pass true/false).
-
-- setWallBounceEnabled(enabled)
-
-  - Enable or disable automatic top/bottom wall bounce (pass true/false).
-
-- checkPaddleHit()
-
-  - Returns which paddle (if any) the ball is currently colliding with: "left", "right", or "none".
-
-- checkWallHit()
-
-  - Returns which wall (if any) the ball has touched: "top", "bottom", "left", "right", or "none".
-
-- resetBall()
-
-  - Reset the ball to the center and reverse its X direction.
-
-- setupScoring()
-
-  - Initialise engine scoring and reset the ball to start a game. Call this from your sketch's `setup()` when you want the engine to track points and automatically reset the ball after a score. If the engine is in `manualCollision` mode, `setupScoring()` is a no-op and scoring remains disabled.
-
-- setScoringEnabled(enabled)
-
-  - Toggle scoring at runtime. Passing `true` turns scoring on (unless `manualCollision` is enabled), `false` turns it off.
-
-- scoringEnabled (property)
-
-  - Read-only-ish boolean (on the `game` instance) indicating whether scoring is currently enabled.
-
-- score1 / score2 (properties)
-
-  - When scoring is enabled, the engine maintains `game.score1` (left player) and `game.score2` (right player). Use these to display the score in your sketch.
-
-- player1Scored() / player2Scored()
-
-  - Call these from your sketch when you are handling collisions or scoring manually (for example in `manualCollision` mode). They increment the appropriate player's score but do NOT reset the ball — this gives students control over what happens after a point during experiments. The engine's automatic scoring path will still reset the ball when a point occurs.
-
-- bounceHorizontal()
-
-  - Invert the ball's X velocity (for left/right reflections).
-
-- bounceVertical()
-
-  - Invert the ball's Y velocity (for top/bottom reflections).
-
-- bounceFrom(hit)
-
-  - Convenience: bounce based on descriptor strings like "top", "bottom", "left", "right", or "paddle".
-
-- reflectFromPaddle(side, contactY)
-  - Pong-style reflection: set ball velocity based on where it contacted the paddle. `side` is 'left' or 'right' (or 1/2), `contactY` is the Y coordinate of the hit (for example, `game.ballY`).
-
-All method names are synchronous and operate on the `game` instance created in `setup()`.
-
-## Example usage
-
-Inside the `STUDENT AREA` of `sketch.js` (or from the browser console after the sketch starts):
+Beginner: automatic collisions + scoring (recommended first)
 
 ```javascript
-// Set paddle colours and speed
-game.setPaddleColors("red", "blue");
+function setup() {
+  createCanvas(400, 300);
+  game = new PongGame({ manualCollision: false });
+  game.setPaddleColors("red", "blue");
+  game.setPaddleSpeed(5);
+  game.setBallSpeed(4);
+  game.setupScoring(); // engine will track points and reset on score
+}
+
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+}
+```
+
+Manual: students implement paddle collisions (walls still auto-handled)
+
+```javascript
+function setup() {
+  createCanvas(400, 300);
+  game = new PongGame({ manualCollision: true });
+  game.setPaddleColors("orange", "cyan");
+}
+
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+
+  const ph = game.checkPaddleHit();
+  if (ph === "left") game.reflectFromPaddle("left");
+  else if (ph === "right") game.reflectFromPaddle("right");
+}
+```
+
+Notes for teachers
+
+- `game.reflectFromPaddle(side)` uses the engine's ball position if you omit the hit Y and will nudge the ball out of the paddle for you.
+- Top/bottom walls are handled by the engine in all modes — students don't need to implement wall bounces.
+- To manually increment scores in `manualCollision` mode use `game.player1Scored()` / `game.player2Scored()` (these do NOT reset the ball).
+
+Common tweaks students try
+
+```javascript
+// Move paddles
+game.setLeftPaddle(x, y);
+game.setRightPaddle(x, y);
+
+// Change appearance/speed
+game.setPaddleColors("cyan", "magenta");
 game.setPaddleSpeed(6);
-
-// Move left paddle to (20,50) and right paddle to (380,150)
-game.setLeftPaddle(20, 50);
-game.setRightPaddle(380, 150);
-
-// Make the ball faster
 game.setBallSpeed(5);
 
-// Turn off engine paddle collision so students can implement custom logic
-game.setPaddleCollisionEnabled(false);
-
-// To use engine-managed scoring, call `game.setupScoring()` in `setup()`
-// (only when `manualCollision` is false). The engine will increment scores
-// and reset the ball after a point. In `draw()` you can display the scores:
-if (game.scoringEnabled) {
-  text(game.score1 || 0, width / 4, 30);
-  text(game.score2 || 0, (width * 3) / 4, 30);
-}
+// Toggle manual collision at runtime
+game.setManualCollision(true); // or false
 ```
 
-## Notes & tips
-
-- `game` is created in `sketch.js` inside `setup()` — don't call its methods before `setup()` runs.
-- If you prefer offline usage, update `index.html` to load the local `p5.js` and `p5.sound.min.js` files (they're included in the repo) instead of the CDN.
-- The engine intentionally exposes a small, focused API so students can experiment without needing to modify engine internals.
-
-If you'd like, I can also add a short section with running examples, or generate a small interactive UI to toggle collision/wall-bounce and reset scores.
-
-## Manual collision: constructor option vs setter
-
-There are two equivalent ways to tell the engine you will handle collisions yourself:
-
-- At construction time: pass `{ manualCollision: true }` to the constructor.
+One-line student example (easy copy/paste)
 
 ```javascript
-// option A: constructor-time (disables engine auto-collisions)
-// Primary pattern shown here: construct with the option
-game = new PongGame({ manualCollision: true });
+const hit = game.consumePaddleHit();
+if (hit === "left") game.bounceRight();
 ```
 
-- Or after creating the instance: call `setManualCollision(true)`.
+Short API (most useful methods)
 
-```javascript
-// option B: set after construction (does the same thing)
-// Alternative pattern: construct normally then call the setter
-game = new PongGame();
-game.setManualCollision(true);
-```
+- `new PongGame({ manualCollision: true|false })`
+- `game.setManualCollision(enabled)`
+- `game.setupScoring()`
+- `game.player1Scored()` / `game.player2Scored()`
+- `game.setLeftPaddle(x,y)` / `game.setRightPaddle(x,y)`
+- `game.setPaddleColors(left, right)`
+- `game.setPaddleSpeed(n)` / `game.setBallSpeed(n)`
+- `game.checkPaddleHit()` / `game.checkWallHit()`
+- `game.reflectFromPaddle(side[, contactY])` (contactY optional)
+- `game.consumePaddleHit()` / `game.clearPaddleHit()`
 
-Use whichever feels clearer for your lesson — both stop the engine from auto-bouncing the ball so you can detect hits and call the helpers yourself.
-
-Teacher tip: for beginners, teach the constructor option first (it's a single place to show the mode), then show the setter for runtime toggling.
-
-## Toggle manual/automatic collisions at runtime (demo snippet)
-
-If you want students to switch modes while the sketch runs (demo or lesson), add this tiny `keyPressed()` handler to the STUDENT AREA. Press `M` to toggle between manual and automatic collision modes:
-
-```javascript
-function keyPressed() {
-  if (key === "m" || key === "M") {
-    game.setManualCollision(!game.manualCollision);
-  }
-}
-```
-
-This demonstrates how the setter can be used for live demos.
-
-Teaching note — when to introduce manual collisions
-
-Introduce manual collision handling after students have played the basic game for a few minutes and are comfortable with:
-
-- moving paddles (W/S and Up/Down),
-- noticing how the ball bounces, and
-- changing simple numbers like `setPaddleSpeed()` and `setBallSpeed()`.
-
-Once they can predict how the ball moves, manual collisions are a good hands-on exercise: students can see how changing the contact point changes the bounce angle.
-
-## Beginner copy-paste starter (for absolute beginners)
-
-If you're new to JavaScript, here is the simplest code you can copy and paste into the `STUDENT AREA` at the top of `sketch.js`. It does three things:
-
-- creates the game area,
-- starts the engine, and
-- changes the paddle colours and speeds so it's easier to see and play.
-
-Copy the whole block below into the top of `sketch.js` (replace whatever is in the STUDENT AREA) and then open `index.html` in your browser.
-
-```javascript
-// === BEGINNER: copy this into the STUDENT AREA of sketch.js ===
+If you'd like, I can produce a one-page printable handout for teachers or add an on-screen helper in the sketches.
 // Don't worry about the other code — this is all you need to try the game.
 
 // Keep engine collisions on so the game works automatically
 // (use the API `setManualCollision` on the `game` instance)
 
 function setup() {
-  // Make the game window (do not change these numbers yet)
-  createCanvas(400, 300);
+// Make the game window (do not change these numbers yet)
+createCanvas(400, 300);
 
-  // Start the Pong engine — the variable `game` is used by the code below
-  // Primary pattern for beginners: construct with the manualCollision option
-  game = new PongGame({ manualCollision: false });
-  // Alternative: construct normally then call the setter
-  // game = new PongGame();
-  // game.setManualCollision(false);
+// Start the Pong engine — the variable `game` is used by the code below
+// Primary pattern for beginners: construct with the manualCollision option
+game = new PongGame({ manualCollision: false });
+// Alternative: construct normally then call the setter
+// game = new PongGame();
+// game.setManualCollision(false);
 
-  // Make the paddles easier to see and control
-  game.setPaddleColors("red", "blue"); // left is red, right is blue
-  game.setPaddleSpeed(5); // how fast the paddles move with keys
-  game.setBallSpeed(4); // how fast the ball moves overall
-  // Initialise engine scoring for this beginner automatic-collision example
-  game.setupScoring();
-  // (Constructor above already set manualCollision=false) but calling the
-  // setter here is also fine if you prefer the setter pattern.
-  // game.setManualCollision(false);
-  // Alternatively, construct with manualCollision disabled explicitly:
-  // game = new PongGame({ manualCollision: false });
+// Make the paddles easier to see and control
+game.setPaddleColors("red", "blue"); // left is red, right is blue
+game.setPaddleSpeed(5); // how fast the paddles move with keys
+game.setBallSpeed(4); // how fast the ball moves overall
+// Initialise engine scoring for this beginner automatic-collision example
+game.setupScoring();
+// (Constructor above already set manualCollision=false) but calling the
+// setter here is also fine if you prefer the setter pattern.
+// game.setManualCollision(false);
+// Alternatively, construct with manualCollision disabled explicitly:
+// game = new PongGame({ manualCollision: false });
 }
 
 function draw() {
-  // Clear screen and run the game loop (this is required)
-  background(0);
-  game.update();
-  game.show();
+// Clear screen and run the game loop (this is required)
+background(0);
+game.update();
+game.show();
 }
 
 // Now open index.html and play: use W/S to move the left paddle, and
 // the Up/Down arrow keys to move the right paddle.
 // === END COPY ===
-```
+
+````
 
 ## Example: set paddle positions and colours
 
@@ -458,7 +395,7 @@ function draw() {
 // Now open index.html and play. Use W/S for the left paddle and
 // Up/Down arrows for the right paddle.
 // === END COPY ===
-```
+````
 
 ## Example: manual collision handling (see how bouncing works)
 
