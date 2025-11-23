@@ -43,6 +43,9 @@ class PongGame {
     // inside `draw()` and call simple helpers like `game.bounceRight()`.
     this.paddleHit = "none"; // 'left'|'right'|'none'
     this.wallHit = "none"; // 'left'|'right'|'top'|'bottom'|'none'
+    // Internal helpers to prevent repeated scoring in manual mode
+    this._wallConsumed = false; // whether the current wall hit was consumed
+    this._consumedWall = null; // which wall was consumed ('left'|'right')
 
     // Honor constructor option to disable automatic collisions for manual handling
     if (options && options.manualCollision) {
@@ -320,6 +323,22 @@ class PongGame {
     return { hit: "none", contactFraction: null };
   }
 
+  // consumeWallHit(): returns the current left/right wall hit and marks it
+  // consumed so repeated calls (or frames) won't report it again until the
+  // ball returns to play. Use in manual-scoring sketches to safely increment
+  // a score once per crossing:
+  // const wall = game.consumeWallHit(); if (wall === 'left') game.player2Scored();
+  consumeWallHit() {
+    const w = this._detectWallHit();
+    if (w === "left" || w === "right") {
+      // mark consumed and remember which wall
+      this._wallConsumed = true;
+      this._consumedWall = w;
+      return w;
+    }
+    return "none";
+  }
+
   // Simple collision+scoring step: a single-call helper that detects
   // paddle/wall hits, applies reflection, and optionally handles scoring.
   // Usage: const result = game.simpleCollisionStep({ autoScore: true, autoReset: true });
@@ -363,7 +382,10 @@ class PongGame {
   // Check which wall (if any) was hit
   // returns "left", "right", "top", "bottom" or "none"
   checkWallHit() {
-    return this._detectWallHit();
+    // If a left/right wall was consumed recently, don't report it again
+    const raw = this._detectWallHit();
+    if (this._wallConsumed && raw === this._consumedWall) return "none";
+    return raw;
   }
 
   // Reset ball to centre and reverse X direction
