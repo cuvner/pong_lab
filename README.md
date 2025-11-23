@@ -1,3 +1,168 @@
+# pong_lab
+
+Simple Pong teaching lab built with p5.js. The repo contains a small, student-editable `sketch.js` and the game engine in `pong_game.js`.
+
+Table of contents
+
+- Quick run
+- What changed (scoring + manual collisions)
+- Examples
+  - Beginner starter
+  - Paddles positions & colours
+  - Manual collision
+  - Manual scoring (example)
+- API reference (short)
+- Notes & tips
+
+## Quick run
+
+Open `index.html` in a browser, or serve the folder and visit the local server address. Example (from project root):
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+The page loads p5.js and `sketch.js`. The `PongGame` class is defined in `pong_game.js` and is available to the sketch as the global `game` variable after `setup()` runs.
+
+Screenshots (optional)
+
+Add screenshots to the repo and reference them here for teachers who want a printable handout. Example Markdown placeholder:
+
+```markdown
+![Gameplay screenshot](docs/screenshot-placeholder.png)
+```
+
+## What changed — scoring and manual collisions (short)
+
+- New: engine-managed scoring. Call `game.setupScoring()` in your sketch's `setup()` (only when `manualCollision` is false) and the engine will automatically increment `game.score1` / `game.score2` and reset the ball after a point.
+- Manual mode (`manualCollision: true`) disables automatic scoring/reset so students can experiment with a ball left in-play. Use `game.player1Scored()` / `game.player2Scored()` from your sketch to increment scores manually when you detect a scoring event — these helper methods DO NOT reset the ball so students keep control.
+
+## Examples
+
+All examples below are copy-paste-ready for the `STUDENT AREA` at the top of `sketch.js`.
+
+### Beginner starter
+
+Automatic collisions and engine-managed scoring (recommended for absolute beginners):
+
+```javascript
+function setup() {
+  createCanvas(400, 300);
+  game = new PongGame({ manualCollision: false });
+  game.setPaddleColors("red", "blue");
+  game.setPaddleSpeed(5);
+  game.setBallSpeed(4);
+  // Enable engine-managed scoring for a simple game flow
+  game.setupScoring();
+}
+
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+}
+```
+
+### Paddles positions & colours
+
+Use this to show how to place paddles and make them visible:
+
+```javascript
+function setup() {
+  createCanvas(400, 300);
+  game = new PongGame();
+  game.setManualCollision(false);
+  game.setupScoring();
+  game.setLeftPaddle(30, height / 2 - 25);
+  game.setRightPaddle(width - 40, height / 2 - 25);
+  game.setPaddleColors("orange", "cyan");
+  game.setPaddleSpeed(6);
+}
+
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+}
+```
+
+### Manual collision (students implement bouncing)
+
+Turn off engine auto-collisions and implement collision detection yourself:
+
+```javascript
+function setup() {
+  createCanvas(400, 300);
+  game = new PongGame({ manualCollision: true });
+  game.setPaddleColors("orange", "cyan");
+  game.setPaddleSpeed(5);
+}
+
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+
+  const ph = game.checkPaddleHit();
+  if (ph === "left") {
+    game.reflectFromPaddle("left", game.ballY);
+    game.ballX = game.paddle1X + game.paddleW + game.ballRadius + 1;
+  } else if (ph === "right") {
+    game.reflectFromPaddle("right", game.ballY);
+    game.ballX = game.paddle2X - game.ballRadius - 1;
+  }
+
+  const wh = game.checkWallHit();
+  if (wh === "top" || wh === "bottom") {
+    game.bounceVertical();
+    if (wh === "top") game.ballY = game.ballRadius + 1;
+    else game.ballY = height - game.ballRadius - 1;
+  }
+}
+```
+
+### Manual scoring (example)
+
+When running manual collision exercises you can still keep score. Call the helper methods to increment scores without resetting the ball:
+
+```javascript
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+
+  const wall = game.checkWallHit();
+  if (wall === "left") {
+    // right player scored
+    game.player2Scored();
+    // optionally: game.resetBall();
+  } else if (wall === "right") {
+    game.player1Scored();
+    // optionally: game.resetBall();
+  }
+}
+```
+
+The engine will draw scores in `game.show()` whenever `game.scoringEnabled` is true or when scores are non-zero.
+
+## Short API reference
+
+- `new PongGame({ manualCollision: true|false })` — construct the engine; setting `manualCollision:true` disables automatic collisions.
+- `game.setManualCollision(enabled)` — toggle manual/automatic collisions at runtime.
+- `game.setupScoring()` — initialise engine-managed scoring (no-op in manual mode).
+- `game.setScoringEnabled(enabled)` — set scoring on/off (respects manualCollision).
+- `game.player1Scored()` / `game.player2Scored()` — increment scores manually (do NOT reset the ball).
+- `game.score1` / `game.score2` — numeric score values maintained by the engine.
+- `game.checkPaddleHit()`, `game.checkWallHit()`, `game.resetBall()`, `game.reflectFromPaddle(side, contactY)`, `game.setPaddleSpeed(...)`, `game.setBallSpeed(...)`, `game.setPaddleColors(...)`, `game.setLeftPaddle(x,y)`, `game.setRightPaddle(x,y)`, `game.setPaddlesXY(...)`
+
+## Notes & tips
+
+- `game` is created in `sketch.js` inside `setup()` — don't call its methods before `setup()` runs.
+- For beginner lessons use the constructor option `new PongGame({ manualCollision:false })` and `game.setupScoring()` so students get an immediately playable game with scoring.
+- Use manual mode (`manualCollision:true`) when teaching collision geometry — it leaves the ball in-play and gives students a clearer view of contact -> reflection.
+
+If you'd like, I can also add a printable handout layout or an on-screen toggle for scoring/reset in `sketch.js` for classroom demos.
 // To let the engine manage scoring automatically, call `game.setupScoring()` in `setup()`
 // (only when `manualCollision` is false). The engine will increment `game.score1`
 // / `game.score2` and reset the ball when a point is scored. Example display:
