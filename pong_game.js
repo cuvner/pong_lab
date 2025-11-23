@@ -32,7 +32,6 @@ class PongGame {
 
     // Collision flags (default: engine handles collisions)
     this.usePaddleCollision = true;
-    this.useWallBounce = true;
 
     // Scoring (disabled by default)
     this.scoringEnabled = false;
@@ -119,10 +118,6 @@ class PongGame {
   // Explicit setters for collision flags
   setPaddleCollisionEnabled(enabled) {
     this.usePaddleCollision = !!enabled;
-  }
-
-  setWallBounceEnabled(enabled) {
-    this.useWallBounce = !!enabled;
   }
 
   // Convenience setter: when `true` the engine will NOT auto-handle collisions
@@ -256,7 +251,7 @@ class PongGame {
     this.paddleSpeed = speed;
   }
 
-  // (collision flags managed via setPaddleCollisionEnabled / setWallBounceEnabled)
+  // (paddle collisions managed via setPaddleCollisionEnabled)
 
   // Check which paddle (if any) was hit
   // returns "left", "right" or "none"
@@ -339,46 +334,6 @@ class PongGame {
     return "none";
   }
 
-  // Simple collision+scoring step: a single-call helper that detects
-  // paddle/wall hits, applies reflection, and optionally handles scoring.
-  // Usage: const result = game.simpleCollisionStep({ autoScore: true, autoReset: true });
-  // Returns { hit, contactFraction, scored: 'left'|'right'|'none' }
-  simpleCollisionStep(options = {}) {
-    const { autoScore = false, autoReset = false } = options;
-
-    // First handle paddles & walls using the assist helper
-    const assist = this.manualCollisionAssist();
-    if (
-      assist.hit === "left" ||
-      assist.hit === "right" ||
-      assist.hit === "top" ||
-      assist.hit === "bottom"
-    ) {
-      // If a left/right wall was hit earlier, manualCollisionAssist would have returned 'none'
-      // so scoring handled below via wall detection.
-    }
-
-    // Check for left/right scoring walls explicitly
-    const wall = this._detectWallHit();
-    if (wall === "left" || wall === "right") {
-      if (autoScore) {
-        // engine internal scoring increments and resets ball
-        if (wall === "left") this._scorePoint(2);
-        else this._scorePoint(1);
-        return { hit: wall, contactFraction: null, scored: wall };
-      } else {
-        // do not reset; let caller increment via player1Scored/player2Scored
-        return { hit: wall, contactFraction: null, scored: "none" };
-      }
-    }
-
-    return {
-      hit: assist.hit,
-      contactFraction: assist.contactFraction,
-      scored: "none",
-    };
-  }
-
   // Check which wall (if any) was hit
   // returns "left", "right", "top", "bottom" or "none"
   checkWallHit() {
@@ -416,9 +371,7 @@ class PongGame {
     // expose simple state for students to read
     this.paddleHit = this._detectPaddleHit();
     this.wallHit = this._detectWallHit();
-    if (this.useWallBounce) {
-      this._autoWallBounce();
-    }
+    this._autoWallBounce();
     // Handle scoring if enabled (left/right walls count as points)
     if (this.scoringEnabled) {
       this._handleScoring();

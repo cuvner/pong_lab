@@ -69,7 +69,6 @@ try {
     "setBallSpeed",
     "setPaddleSpeed",
     "setPaddleCollisionEnabled",
-    "setWallBounceEnabled",
     "checkPaddleHit",
     "checkWallHit",
     "resetBall",
@@ -96,7 +95,6 @@ try {
   game.setBallSpeed(4);
   game.setPaddleSpeed(5);
   game.setPaddleCollisionEnabled(false);
-  game.setWallBounceEnabled(false);
   game.update();
 
   // Construct with the manualCollision option and verify it disables paddle collisions
@@ -104,11 +102,11 @@ try {
     manualCollision: true,
   });
   // When manualCollision:true we expect the engine to disable paddle collisions
-  // so students can implement their own paddle logic, but top/bottom wall
-  // bounce remains enabled so students don't need to handle wall bounces.
-  if (game2.usePaddleCollision !== false || game2.useWallBounce !== true) {
+  // so students can implement their own paddle logic; wall bounce is always
+  // handled by the engine (no flag needed).
+  if (game2.usePaddleCollision !== false) {
     throw new Error(
-      "Constructor option { manualCollision: true } should disable paddle collisions but keep wall bounce enabled"
+      "Constructor option { manualCollision: true } should disable paddle collisions"
     );
   }
 

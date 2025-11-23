@@ -17,7 +17,8 @@ Starter (automatic collisions + scoring)
 
 ```js
 // STUDENT AREA
-let game = new PongGame({ manualCollision: false });
+let game = new PongGame();
+game.manualCollision = false;
 game.setupScoring();
 
 function draw() {
@@ -54,47 +55,29 @@ Optional Task 4 — Manual collisions (10–12 minutes)
 - Use this when teaching contact -> reflection. Note: top/bottom walls are still handled by the engine.
 
 ```js
-let game = new PongGame({ manualCollision: true });
+let game = new PongGame();
+game.manualCollision = true;
 
 function draw() {
   background(30);
   game.update();
   game.show();
 
-  const ph = game.checkPaddleHit();
+  let ph = game.checkPaddleHit();
   if (ph === "left") game.reflectFromPaddle("left");
   else if (ph === "right") game.reflectFromPaddle("right");
 }
 ```
-
-Shortcut for younger students: call `manualCollisionAssist()` inside `draw()` and let the engine detect hits and reflect the ball for you. For a single-call version that also handles scoring/resets when requested, use `simpleCollisionStep({ autoScore: true })`.
 
 Notes
 
 - `game.reflectFromPaddle(side)` will use the engine's current ball position if you omit the contact Y and will nudge the ball out of the paddle.
 - Top/bottom wall bounces remain automatic so students don't need to implement wall logic.
 - To increment scores in manual mode call `game.player1Scored()` / `game.player2Scored()` (these do not reset the ball).
-- For manual scoring without double-counting a point, use `game.consumeWallHit()` which reports a left/right exit once until the ball comes back into play.
 
-One-line example
-
-```js
-const hit = game.consumePaddleHit();
-if (hit === "left") game.bounceRight();
-```
-
-Teacher hints
-
-- Start with the automatic starter for novices, then switch to the manual example after a few minutes of play.
-- Use `consumePaddleHit()` in group activities so events are cleared automatically.
-
-Files edited in this worksheet
-
-- `sketch.js` (student area)
+`sketch.js` (student area)
 
 ---
-
-If you want a printable one-page handout from this worksheet, tell me and I will create it.
 
 ## Pong Lab — 15–30 minute Student Worksheet
 
