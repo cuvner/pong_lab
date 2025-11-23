@@ -55,6 +55,7 @@ Teacher notes — things to highlight
 - Top/bottom wall bounces remain handled by the engine in all modes — students don't need to implement wall logic.
 - `manualCollision:true` disables paddle collisions only (so students can experiment with paddle geometry); scoring is disabled in manual mode unless students call `game.player1Scored()` / `game.player2Scored()`.
 - Use `consumePaddleHit()` in whole-class demos to avoid double-handling events.
+- Assisted helpers for younger classes: `manualCollisionAssist()` runs hit detection, reflection, and nudging for you in manual mode, and `simpleCollisionStep({ autoScore })` adds optional scoring/reset in one call. Use these when students aren't ready to write collision math.
 
 Quick copy-paste tweaks to show students
 

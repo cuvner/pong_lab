@@ -67,11 +67,14 @@ function draw() {
 }
 ```
 
+Shortcut for younger students: call `manualCollisionAssist()` inside `draw()` and let the engine detect hits and reflect the ball for you. For a single-call version that also handles scoring/resets when requested, use `simpleCollisionStep({ autoScore: true })`.
+
 Notes
 
 - `game.reflectFromPaddle(side)` will use the engine's current ball position if you omit the contact Y and will nudge the ball out of the paddle.
 - Top/bottom wall bounces remain automatic so students don't need to implement wall logic.
 - To increment scores in manual mode call `game.player1Scored()` / `game.player2Scored()` (these do not reset the ball).
+- For manual scoring without double-counting a point, use `game.consumeWallHit()` which reports a left/right exit once until the ball comes back into play.
 
 One-line example
 

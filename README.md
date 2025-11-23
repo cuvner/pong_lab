@@ -1,3 +1,29 @@
+<<<<<<< ours
+# Pong Lab
+
+A lightweight p5.js Pong sandbox that now runs on a minimal static backend. All assets are served directly from this repository with p5.js loaded via CDN, so you only need a simple HTTP server to host the files locally.
+
+## Project layout
+- `index.html` – loads p5.js from the CDN and wires the sketch and styles.
+- `sketch.js` – contains the Pong game engine plus the student-facing scoring logic.
+- `style.css` – basic page styling (feel free to extend).
+- `p5.js` / `p5.sound.min.js` – CDN fallbacks for offline use.
+
+## Running the app
+1. From the project root, start a static server (Python example):
+   ```bash
+   python -m http.server 8080
+   ```
+2. Open `http://localhost:8080/` in your browser.
+3. Use `W/S` for the left paddle and the `Up/Down` arrows for the right paddle.
+
+No additional build tooling or package installation is required because the new backend is simply static file serving.
+
+## Customizing
+- Adjust paddle and ball behavior in the student section at the top of `sketch.js`.
+- Toggle built-in collisions with `game.disablePaddleCollision()` or wall bounces with `game.disableWallBounce()`.
+- Update colors via `game.setPaddleColours()` or tweak speeds with `setBallSpeed()` and `setPaddleSpeed()`.
+=======
 # pong_lab
 
 Simple Pong teaching lab built with p5.js. The repo contains a small, student-editable `sketch.js` and the game engine in `pong_game.js`.
@@ -200,11 +226,42 @@ Teacher note: prefer `consumePaddleHit()` in group exercises — it guarantees t
 
 ## Short API reference
 
-- `new PongGame({ manualCollision: true|false })` — construct the engine; setting `manualCollision:true` disables automatic paddle collisions so students can implement paddle-contact logic themselves. Top/bottom wall bounce remains handled by the engine so students don't need to implement wall bounces.
-- `game.setManualCollision(enabled)` — toggle manual/automatic collisions at runtime.
-- `game.setupScoring()` — initialise engine-managed scoring (no-op in manual mode).
-- `game.setScoringEnabled(enabled)` — set scoring on/off (respects manualCollision).
-- `game.player1Scored()` / `game.player2Scored()` — increment scores manually (do NOT reset the ball).
+The `PongGame` class exposes a small set of student-friendly helpers. Key points for teachers:
+
+- The constructor accepts `{ manualCollision: true|false }`. When `manualCollision:true` is set the engine **disables automatic paddle collisions** so students can handle them manually. Top/bottom wall bounce is always handled by the engine.
+- Keyboard input is built in (W/S for the left paddle, Up/Down for the right paddle). Students do not need to wire listeners.
+- The engine exposes two simple state flags you can read inside `draw()`: `game.paddleHit` (`"left"|"right"|"none"`) and `game.wallHit` (`"left"|"right"|"top"|"bottom"|"none"`).
+
+Public API (classroom-safe methods)
+
+- **Game setup & options**
+  - `new PongGame({ manualCollision })` — construct the engine with optional manual collision mode.
+  - `game.setManualCollision(enabled)` — toggle manual/automatic paddle collisions at runtime.
+  - `game.setPaddleCollisionEnabled(enabled)` / `game.setWallBounceEnabled(enabled)` — turn engine collision handling on/off.
+- **Scoring**
+  - `game.setupScoring()` — initialise engine-managed scoring (no-op in manual mode) and reset the ball.
+  - `game.setScoringEnabled(enabled)` — enable/disable engine scoring. Resets scores to 0 when enabled.
+  - `game.player1Scored()` / `game.player2Scored()` — increment scores manually without resetting the ball.
+  - `game.consumeWallHit()` — one-shot helper for manual scoring; returns `"left"|"right"|"none"` and prevents repeat reports until the ball re-enters play.
+- **Movement & appearance**
+  - `game.setLeftPaddle(x, y)` / `game.setRightPaddle(x, y)` — move each paddle within the canvas.
+  - `game.setPaddleColors(left, right)` — set paddle colours.
+  - `game.setPaddleSpeed(n)` / `game.setBallSpeed(n)` — adjust movement speeds while preserving direction.
+- **Collision helpers**
+  - `game.checkPaddleHit()` — returns `"left"|"right"|"none"`.
+  - `game.getPaddleContactFraction(side)` — returns a -1..+1 fraction for where the ball hit a paddle.
+  - `game.checkWallHit()` — returns `"left"|"right"|"top"|"bottom"|"none"`.
+  - `game.reflectFromPaddle(side[, contactY])` — reflect using the engine's ball position (nudges the ball clear automatically).
+  - `game.manualCollisionAssist()` — helper for manual mode; detects hits, reflects, nudges, and returns `{ hit, contactFraction }`.
+  - `game.simpleCollisionStep({ autoScore, autoReset })` — single call to run assisted collisions and optional scoring.
+- **Bounce helpers & events**
+  - `game.bounceHorizontal()` / `game.bounceVertical()` — flip directions.
+  - `game.bounceRight()` / `game.bounceLeft()` / `game.bounceTop()` / `game.bounceBottom()` — force the next movement to go in that direction while keeping speed.
+  - `game.bounceFrom(descriptor)` — accepts `"left"|"right"|"top"|"bottom"|"paddle"|"horizontal"|"vertical"`.
+  - `game.consumePaddleHit()` / `game.clearPaddleHit()` — read-and-clear or clear the `paddleHit` event flag.
+- **Other helpers**
+  - `game.resetBall()` — recentre the ball and reverse X direction.
+  - `game.update()` / `game.show()` — run each frame to update physics and draw the scene.
 
 # pong_lab — teacher quickstart
 
@@ -493,3 +550,4 @@ function draw() {
   }
 }
 ```
+>>>>>>> theirs
