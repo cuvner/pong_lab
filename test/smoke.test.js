@@ -78,6 +78,7 @@ try {
     "bounceVertical",
     "bounceFrom",
     "reflectFromPaddle",
+    "setManualCollision",
     "update",
     "show",
   ];
@@ -97,6 +98,16 @@ try {
   game.setPaddleCollisionEnabled(false);
   game.setWallBounceEnabled(false);
   game.update();
+
+  // Construct with the manualCollision option and verify it disables engine collisions
+  const game2 = new (vm.runInContext("PongGame", context))({
+    manualCollision: true,
+  });
+  if (game2.usePaddleCollision !== false || game2.useWallBounce !== false) {
+    throw new Error(
+      "Constructor option { manualCollision: true } should disable engine collisions"
+    );
+  }
 
   console.log("SMOKE TEST: PASS");
   process.exit(0);

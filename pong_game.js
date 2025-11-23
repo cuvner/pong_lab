@@ -5,7 +5,8 @@
 // without scrolling through the engine implementation.
 
 class PongGame {
-  constructor() {
+  // Accept an optional options object: { manualCollision: true }
+  constructor(options = {}) {
     // Ball
     this.ballSize = 10;
     this.ballRadius = this.ballSize / 2;
@@ -29,9 +30,19 @@ class PongGame {
     this.paddle1Colour = color(255);
     this.paddle2Colour = color(255);
 
-    // Collision flags
+    // Collision flags (default: engine handles collisions)
     this.usePaddleCollision = true;
     this.useWallBounce = true;
+
+    // Honor constructor option to disable automatic collisions for manual handling
+    if (options && options.manualCollision) {
+      // disable automatic engine collisions when manual collision mode requested
+      this.setPaddleCollisionEnabled(false);
+      this.setWallBounceEnabled(false);
+      this.manualCollision = true;
+    } else {
+      this.manualCollision = false;
+    }
   }
 
   // ============= PUBLIC METHODS (for students) =============
@@ -72,6 +83,16 @@ class PongGame {
 
   setWallBounceEnabled(enabled) {
     this.useWallBounce = !!enabled;
+  }
+
+  // Convenience setter: when `true` the engine will NOT auto-handle collisions
+  // (useful for student examples that implement collisions manually).
+  setManualCollision(enabled) {
+    const m = !!enabled;
+    // If manual is true, disable engine collision/bounce; otherwise enable them.
+    this.setPaddleCollisionEnabled(!m);
+    this.setWallBounceEnabled(!m);
+    this.manualCollision = m;
   }
 
   // Bounce helpers (short, tidy names)

@@ -1,22 +1,32 @@
-// === BEGINNER: copy this into the STUDENT AREA of sketch.js ===
-// Don't worry about the other code — this is all you need to try the game.
-
-// Keep engine collisions on so the game works automatically
-let manualCollisionExample = false;
+// === PADDLES POSITIONS & COLOURS: copy into the STUDENT AREA ===
+// This sets where each paddle appears and what colour they are.
+let manualCollisionExample = false; // keep engine collisions on for a working game
 
 function setup() {
-  // Make the game window (do not change these numbers yet)
   createCanvas(400, 300);
-
-  // Start the Pong engine — the variable `game` is used by the code below
   game = new PongGame();
 
-  // Make the paddles easier to see and control
-  game.setPaddleColors("red", "blue"); // left is red, right is blue
-  game.setPaddleSpeed(5); // how fast the paddles move with keys
-  game.setBallSpeed(4); // how fast the ball moves overall
+  // Place left paddle (x, y). y is measured from top of the screen.
+  // height/2 - 25 roughly centres the paddle vertically.
+  game.setLeftPaddle(30, height / 2 - 25);
+
+  // Place right paddle (x, y). width - 40 keeps it near the right edge.
+  game.setRightPaddle(width - 40, height / 2 - 25);
+
+  // Make the paddles stand out
+  game.setPaddleColors("orange", "cyan"); // left = orange, right = cyan
+
+  // Make paddles a little quicker to move
+  game.setPaddleSpeed(6);
 }
 
-// Now open index.html and play: use W/S to move the left paddle, and
-// the Up/Down arrow keys to move the right paddle.
+function draw() {
+  // Runs each frame: clear the screen and draw the game
+  background(0);
+  game.update();
+  game.show();
+}
+
+// Now open index.html and play. Use W/S for the left paddle and
+// Up/Down arrows for the right paddle.
 // === END COPY ===

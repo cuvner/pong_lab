@@ -9,7 +9,9 @@ let score2 = 0; // Player 2 (right)
 // collisions and show how students can detect strikes and call the
 // helper bounce methods (reflectFromPaddle / bounceVertical).
 // Flip to false to use the built-in engine collisions.
-let manualCollisionExample = true;
+// Toggle this to `true` to practice manual collision handling, or `false`
+// to let the engine do collisions automatically. Default: automatic collisions.
+let manualCollisionExample = false;
 
 function setup() {
   createCanvas(400, 300);
@@ -23,17 +25,9 @@ function setup() {
   // game.setBallSpeed(4);
   // game.setPaddleSpeed(6);
 
-  // Enable/disable engine collisions depending on the example toggle.
-  if (manualCollisionExample) {
-    // Students will detect collisions and call the bounce helpers themselves.
-    game.setPaddleCollisionEnabled(false);
-    game.setWallBounceEnabled(false);
-  } else {
-    // For *basic working pong*, keep built-in collisions on.
-    // Note: paddle collision is enabled by default in the engine.
-    // game.setPaddleCollisionEnabled(true);
-    // game.setWallBounceEnabled(true);
-  }
+  // Use the convenience API to enable/disable automatic collisions.
+  // This is clearer than toggling engine internals directly.
+  game.setManualCollision(manualCollisionExample);
 }
 
 function draw() {
