@@ -34,6 +34,11 @@ class PongGame {
     this.usePaddleCollision = true;
     this.useWallBounce = true;
 
+    // Scoring (disabled by default)
+    this.scoringEnabled = false;
+    this.score1 = 0;
+    this.score2 = 0;
+
     // Honor constructor option to disable automatic collisions for manual handling
     if (options && options.manualCollision) {
       // disable automatic engine collisions when manual collision mode requested
@@ -42,6 +47,41 @@ class PongGame {
       this.manualCollision = true;
     } else {
       this.manualCollision = false;
+    }
+  }
+
+  // ======= Scoring helpers =======
+  // Call this from your sketch's setup() to initialise scoring if you
+  // want the engine to track points and reset the ball on score.
+  // If the engine is in manualCollision mode, scoring will remain disabled
+  // and the ball won't be automatically reset.
+  setupScoring() {
+    // Only enable scoring when not in manual collision mode
+    if (this.manualCollision) {
+      this.scoringEnabled = false;
+      return;
+    }
+
+    this.scoringEnabled = true;
+    this.score1 = 0;
+    this.score2 = 0;
+    // Give a consistent start position
+    this.resetBall();
+  }
+
+  // Toggle scoring at runtime. If manualCollision is true, scoring will
+  // not be enabled.
+  setScoringEnabled(enabled) {
+    const e = !!enabled;
+    if (e && this.manualCollision) {
+      // don't enable scoring while in manual collision mode
+      this.scoringEnabled = false;
+      return;
+    }
+    this.scoringEnabled = e;
+    if (this.scoringEnabled) {
+      this.score1 = 0;
+      this.score2 = 0;
     }
   }
 
@@ -196,6 +236,18 @@ class PongGame {
     this.ballXSpeed *= -1;
   }
 
+  // Public methods students can call when handling scoring themselves
+  // These do NOT reset the ball so students can control the flow when
+  // in manual collision mode. The engine's automatic scoring path will
+  // still call _scorePoint() which does reset the ball.
+  player1Scored() {
+    this.score1 = (this.score1 || 0) + 1;
+  }
+
+  player2Scored() {
+    this.score2 = (this.score2 || 0) + 1;
+  }
+
   // (bounce helpers implemented via tidy names above)
 
   // ============= GAME LOOP METHODS =============
@@ -204,6 +256,10 @@ class PongGame {
     this._moveBall();
     if (this.useWallBounce) {
       this._autoWallBounce();
+    }
+    // Handle scoring if enabled (left/right walls count as points)
+    if (this.scoringEnabled) {
+      this._handleScoring();
     }
     this._handleInput();
     this._keepPaddlesOnScreen();
@@ -228,6 +284,20 @@ class PongGame {
     stroke(255);
     line(width / 2, 0, width / 2, height);
     noStroke();
+
+    // Draw scores inside the engine when scoring is enabled OR when
+    // scores exist (so students using manual mode and calling
+    // player1Scored()/player2Scored() still see the values).
+    const shouldShowScores =
+      this.scoringEnabled || (this.score1 || 0) > 0 || (this.score2 || 0) > 0;
+    if (shouldShowScores) {
+      // Use readable styling but avoid interfering with student sketches
+      fill(255);
+      textSize(24);
+      textAlign(CENTER);
+      text(this.score1 || 0, width / 4, 30);
+      text(this.score2 || 0, (width * 3) / 4, 30);
+    }
   }
 
   // ============= INTERNAL HELPERS =============
@@ -315,5 +385,25 @@ class PongGame {
     }
 
     return "none";
+  }
+
+  // Scoring internal helpers
+  _handleScoring() {
+    const wall = this._detectWallHit();
+    if (wall === "left") {
+      // Right player scored
+      this._scorePoint(2);
+    } else if (wall === "right") {
+      // Left player scored
+      this._scorePoint(1);
+    }
+  }
+
+  _scorePoint(player) {
+    if (player === 1) this.score1 = (this.score1 || 0) + 1;
+    else if (player === 2) this.score2 = (this.score2 || 0) + 1;
+
+    // After scoring, reset the ball to the centre for the next serve
+    this.resetBall();
   }
 }

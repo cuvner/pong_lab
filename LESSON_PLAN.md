@@ -41,6 +41,9 @@ Timing & steps (5–10 minutes)
 - Paste the "MANUAL COLLISION" example into the STUDENT AREA (or switch to manual in the sketch).
 - Students run and test: now the code in `draw()` checks for `checkPaddleHit()` and calls `reflectFromPaddle()`; they can tweak the paddle position or `setPaddleSpeed()` and observe changes.
 - Teacher prompt: "Try hitting the top of the paddle — what happens to the ball angle? Try the bottom — how is it different?"
+- Note: when using the manual collision example (`manualCollision: true`) the engine will NOT manage scoring and will NOT reset the ball automatically; this keeps the ball in-play for students experimenting with collision behaviour.
+  - Note: when using the manual collision example (`manualCollision: true`) the engine will NOT manage scoring and will NOT reset the ball automatically; this keeps the ball in-play for students experimenting with collision behaviour.
+  - If you want to keep score during manual exercises, call `game.player1Scored()` or `game.player2Scored()` from your student code when you detect a point. The engine's `show()` will draw the scores whenever they are non-zero so students can display them without extra drawing code.
 
 5. (optional, 1 min) Quick reflection
 

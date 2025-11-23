@@ -1,3 +1,7 @@
+// To let the engine manage scoring automatically, call `game.setupScoring()` in `setup()`
+// (only when `manualCollision` is false). The engine will increment `game.score1`
+// / `game.score2` and reset the ball when a point is scored. Example display:
+
 # pong_lab
 
 Simple Pong teaching lab built with p5.js. The repo contains a small, student-editable `sketch.js` and the game engine in `pong_game.js`.
@@ -70,6 +74,26 @@ game.setBallSpeed(4); // how fast the ball moves overall
 
   - Reset the ball to the center and reverse its X direction.
 
+- setupScoring()
+
+  - Initialise engine scoring and reset the ball to start a game. Call this from your sketch's `setup()` when you want the engine to track points and automatically reset the ball after a score. If the engine is in `manualCollision` mode, `setupScoring()` is a no-op and scoring remains disabled.
+
+- setScoringEnabled(enabled)
+
+  - Toggle scoring at runtime. Passing `true` turns scoring on (unless `manualCollision` is enabled), `false` turns it off.
+
+- scoringEnabled (property)
+
+  - Read-only-ish boolean (on the `game` instance) indicating whether scoring is currently enabled.
+
+- score1 / score2 (properties)
+
+  - When scoring is enabled, the engine maintains `game.score1` (left player) and `game.score2` (right player). Use these to display the score in your sketch.
+
+- player1Scored() / player2Scored()
+
+  - Call these from your sketch when you are handling collisions or scoring manually (for example in `manualCollision` mode). They increment the appropriate player's score but do NOT reset the ball — this gives students control over what happens after a point during experiments. The engine's automatic scoring path will still reset the ball when a point occurs.
+
 - bounceHorizontal()
 
   - Invert the ball's X velocity (for left/right reflections).
@@ -106,10 +130,12 @@ game.setBallSpeed(5);
 // Turn off engine paddle collision so students can implement custom logic
 game.setPaddleCollisionEnabled(false);
 
-// Check for scoring in the draw() loop
-if (game.checkWallHit() === "left") {
-  // right player scored
-  game.resetBall();
+// To use engine-managed scoring, call `game.setupScoring()` in `setup()`
+// (only when `manualCollision` is false). The engine will increment scores
+// and reset the ball after a point. In `draw()` you can display the scores:
+if (game.scoringEnabled) {
+  text(game.score1 || 0, width / 4, 30);
+  text(game.score2 || 0, (width * 3) / 4, 30);
 }
 ```
 
@@ -202,6 +228,8 @@ function setup() {
   game.setPaddleColors("red", "blue"); // left is red, right is blue
   game.setPaddleSpeed(5); // how fast the paddles move with keys
   game.setBallSpeed(4); // how fast the ball moves overall
+  // Initialise engine scoring for this beginner automatic-collision example
+  game.setupScoring();
   // (Constructor above already set manualCollision=false) but calling the
   // setter here is also fine if you prefer the setter pattern.
   // game.setManualCollision(false);
@@ -237,6 +265,9 @@ function setup() {
 
   // Ensure automatic collisions are turned on for this example
   game.setManualCollision(false);
+
+  // Initialise engine-managed scoring for this example
+  game.setupScoring();
 
   // Place left paddle (x, y). y is measured from top of the screen.
   // height/2 - 25 roughly centres the paddle vertically.
@@ -318,4 +349,45 @@ function draw() {
 
 // Now open index.html and try the game. Use W/S (left) and Up/Down (right).
 // === END COPY ===
+```
+
+### Manual scoring (example)
+
+When you run the manual collision example (`manualCollision: true`) the engine will not
+manage scoring or reset the ball. If you'd like to keep score while students experiment
+you can call `game.player1Scored()` and `game.player2Scored()` from your sketch code.
+The engine's `show()` will render the scores automatically whenever they are non-zero.
+
+Copy this short block into the `STUDENT AREA` to try manual scoring:
+
+```javascript
+// Manual scoring + manual collisions example
+function setup() {
+  createCanvas(400, 300);
+  game = new PongGame({ manualCollision: true });
+  game.setPaddleColors("orange", "cyan");
+  game.setPaddleSpeed(5);
+  // Do NOT call game.setupScoring() here — scoring is disabled in manual mode.
+}
+
+function draw() {
+  background(0);
+  game.update();
+  game.show();
+
+  // Detect left/right exits and increment the appropriate player's score.
+  // These helper calls increment the score but do NOT reset the ball so
+  // students can keep experimenting with the same ball position.
+  const wall = game.checkWallHit();
+  if (wall === "left") {
+    // Right player scored
+    game.player2Scored();
+    // Optionally reset the ball yourself if you want a serve:
+    // game.resetBall();
+  } else if (wall === "right") {
+    // Left player scored
+    game.player1Scored();
+    // game.resetBall();
+  }
+}
 ```

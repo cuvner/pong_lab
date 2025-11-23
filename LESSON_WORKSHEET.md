@@ -25,6 +25,8 @@ Starter code (paste this into the STUDENT AREA of `sketch.js`)
 // BEGIN STUDENT AREA
 // Quick starter: construct the game and run it.
 let game = new PongGame({ manualCollision: false });
+// Initialise engine scoring for the basic automatic-collision setup
+game.setupScoring();
 
 function draw() {
   background(30);
@@ -69,6 +71,12 @@ Task 4 — Manual collision (10–12 minutes) — optional but recommended for d
 - Replace the starter code with this pattern (paste into STUDENT AREA):
 
 ```js
+// Note: when using manualCollision=true the engine will NOT manage scoring
+// (scoring is disabled in manual mode), so you won't get automatic resets.
+// If you want to keep a score while in manual mode, call `game.player1Scored()`
+// or `game.player2Scored()` from your code when you detect a scoring event.
+// The engine's `show()` method will display the scores for you even in
+// manual mode (it draws scores whenever they are non-zero).
 let game = new PongGame({ manualCollision: true });
 
 function draw() {
@@ -90,6 +98,31 @@ function draw() {
   // walls are still handled by the engine (or you can check them manually)
   game.show();
 }
+
+// --- Short manual-scoring example for teachers/students ---
+// If you want students to keep score while experimenting in manual mode,
+// add the following small snippet to your STUDENT AREA. It increments the
+// appropriate player's score but does not reset the ball (students can
+// call `game.resetBall()` themselves when they want to serve).
+
+/*
+function draw() {
+  background(30);
+  game.update();
+  game.show();
+
+  const wall = game.checkWallHit();
+  if (wall === 'left') {
+    // right player scored
+    game.player2Scored();
+    // optionally: game.resetBall();
+  } else if (wall === 'right') {
+    // left player scored
+    game.player1Scored();
+    // optionally: game.resetBall();
+  }
+}
+*/
 ```
 
 - Hints:

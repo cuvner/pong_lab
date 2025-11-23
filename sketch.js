@@ -3,8 +3,6 @@
 // =============================
 
 let game;
-let score1 = 0; // Player 1 (left)
-let score2 = 0; // Player 2 (right)
 // Example toggle: when true the sketch will disable the engine's automatic
 // collisions and show how students can detect strikes and call the
 // helper bounce methods (reflectFromPaddle / bounceVertical).
@@ -28,6 +26,8 @@ function setup() {
   // Use the convenience API to enable/disable automatic collisions.
   // This is clearer than toggling engine internals directly.
   game.setManualCollision(manualCollisionExample);
+  // Initialise scoring only when not in manual collision mode
+  game.setupScoring();
 }
 
 function draw() {
@@ -67,27 +67,14 @@ function draw() {
     }
   }
 
-  // --- STUDENT SCORE LOGIC ---
-
-  // 1. Check which wall the ball has hit
-  let wall = game.checkWallHit();
-
-  if (wall === "left") {
-    // Ball went off left side → Player 2 scores
-    score2++;
-    game.resetBall();
-  } else if (wall === "right") {
-    // Ball went off right side → Player 1 scores
-    score1++;
-    game.resetBall();
+  // Draw scores if the engine has scoring enabled
+  if (game.scoringEnabled) {
+    fill(255);
+    textSize(24);
+    textAlign(CENTER);
+    text(game.score1 || 0, width / 4, 30);
+    text(game.score2 || 0, (width * 3) / 4, 30);
   }
-
-  // 2. Draw the scores
-  fill(255);
-  textSize(24);
-  textAlign(CENTER);
-  text(score1, width / 4, 30);
-  text(score2, (width * 3) / 4, 30);
 }
 
 // =====================================

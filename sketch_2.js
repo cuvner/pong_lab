@@ -7,8 +7,7 @@ let manualCollisionExample = true;
 
 // Game + scores
 let game;
-let score1 = 0; // Player 1 (left)
-let score2 = 0; // Player 2 (right)
+// scores are handled by the engine when enabled; use game.score1 / game.score2
 
 function setup() {
   createCanvas(400, 300);
@@ -36,6 +35,9 @@ function setup() {
     game.setPaddleCollisionEnabled(true);
     game.setWallBounceEnabled(true);
   }
+
+  // Initialise scoring if appropriate (setupScoring will be a no-op in manual mode)
+  game.setupScoring();
 }
 
 function draw() {
@@ -76,22 +78,14 @@ function draw() {
     }
   }
 
-  // --- Scoring: check left/right edges (consistent with the engine) ---
-  let wall = game.checkWallHit();
-  if (wall === "left") {
-    score2++;
-    game.resetBall();
-  } else if (wall === "right") {
-    score1++;
-    game.resetBall();
-  }
-
-  // Draw scores and instructions
+  // Draw scores if scoring is enabled on the engine
   fill(255);
   textSize(20);
   textAlign(CENTER);
-  text(score1, width / 4, 28);
-  text(score2, (width * 3) / 4, 28);
+  if (game.scoringEnabled) {
+    text(game.score1 || 0, width / 4, 28);
+    text(game.score2 || 0, (width * 3) / 4, 28);
+  }
 
   textSize(12);
   textAlign(LEFT);
