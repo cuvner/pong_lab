@@ -5,22 +5,35 @@
 let game;
 let score1 = 0; // Player 1 (left)
 let score2 = 0; // Player 2 (right)
+// Example toggle: when true the sketch will disable the engine's automatic
+// collisions and show how students can detect strikes and call the
+// helper bounce methods (reflectFromPaddle / bounceVertical).
+// Flip to false to use the built-in engine collisions.
+let manualCollisionExample = true;
 
 function setup() {
   createCanvas(400, 300);
   game = new PongGame();
 
-  // Students can experiment with these later:
-  // game.setPaddlePositions(100, 200);   // both paddles
-  // game.setPaddle1Position(80);        // just left
-  // game.setPaddle2Position(220);       // just right
-  game.setPaddleColours("red", "red");
+  // Students can experiment with these later (preferred tidy names):
+  // game.setPaddlesXY(100, 80, 300, 200);   // both paddles (x,y each)
+  // game.setLeftPaddle(80, 80);            // just left (x,y)
+  // game.setRightPaddle(320, 220);         // just right (x,y)
+  game.setPaddleColors("red", "red");
   // game.setBallSpeed(4);
   // game.setPaddleSpeed(6);
 
-  // For *basic working pong*, we keep built-in collisions on:
-  game.disablePaddleCollision();
-  // game.disableWallBounce();
+  // Enable/disable engine collisions depending on the example toggle.
+  if (manualCollisionExample) {
+    // Students will detect collisions and call the bounce helpers themselves.
+    game.setPaddleCollisionEnabled(false);
+    game.setWallBounceEnabled(false);
+  } else {
+    // For *basic working pong*, keep built-in collisions on.
+    // Note: paddle collision is enabled by default in the engine.
+    // game.setPaddleCollisionEnabled(true);
+    // game.setWallBounceEnabled(true);
+  }
 }
 
 function draw() {
@@ -29,6 +42,36 @@ function draw() {
   // Move and draw everything
   game.update();
   game.show();
+
+  // -----------------------------
+  // EXAMPLE: manual collision handling
+  // If `manualCollisionExample` is true (set at top of file) this shows how
+  // students can detect hits and call the engine bounce helpers themselves.
+  // This is useful when you have disabled the built-in collisions to
+  // implement custom logic.
+  // -----------------------------
+  if (manualCollisionExample) {
+    // Paddle hits
+    const ph = game.checkPaddleHit();
+    if (ph === "left") {
+      // Reflect with angle based on contact position on the left paddle
+      game.reflectFromPaddle("left", game.ballY);
+      // Nudge the ball out of the paddle so it doesn't immediately re-trigger
+      game.ballX = game.paddle1X + game.paddleW + game.ballRadius + 1;
+    } else if (ph === "right") {
+      game.reflectFromPaddle("right", game.ballY);
+      game.ballX = game.paddle2X - game.ballRadius - 1;
+    }
+
+    // Top/bottom wall hits
+    const wh = game.checkWallHit();
+    if (wh === "top" || wh === "bottom") {
+      // Simple vertical bounce
+      game.bounceVertical();
+      if (wh === "top") game.ballY = game.ballRadius + 1;
+      else game.ballY = height - game.ballRadius - 1;
+    }
+  }
 
   // --- STUDENT SCORE LOGIC ---
 
@@ -54,227 +97,4 @@ function draw() {
 }
 
 // =====================================
-// 🚫 DO NOT EDIT: PONG GAME CLASS
-// =====================================
-
-class PongGame {
-  constructor() {
-    // Ball
-    this.ballSize = 10;
-    this.ballRadius = this.ballSize / 2;
-    this.ballX = width / 2;
-    this.ballY = height / 2;
-    this.ballXSpeed = 3;
-    this.ballYSpeed = 3;
-
-    // Paddles
-    this.paddleW = 10;
-    this.paddleH = 50;
-    this.paddleSpeed = 5;
-
-    this.paddle1X = 10;
-    this.paddle1Y = height / 2 - this.paddleH / 2;
-
-    this.paddle2X = width - 10 - this.paddleW;
-    this.paddle2Y = height / 2 - this.paddleH / 2;
-
-    // Paddle colours
-    this.paddle1Colour = color(255);
-    this.paddle2Colour = color(255);
-
-    // Collision flags
-    this.usePaddleCollision = true;
-    this.useWallBounce = true;
-  }
-
-  // ============= PUBLIC METHODS (for students) =============
-
-  // Set both paddles at once (Y positions)
-  setPaddlePositions(p1Y, p2Y) {
-    this.paddle1Y = constrain(p1Y, 0, height - this.paddleH);
-    this.paddle2Y = constrain(p2Y, 0, height - this.paddleH);
-  }
-
-  // Set paddle 1 (left)
-  setPaddle1Position(y) {
-    this.paddle1Y = constrain(y, 0, height - this.paddleH);
-  }
-
-  // Set paddle 2 (right)
-  setPaddle2Position(y) {
-    this.paddle2Y = constrain(y, 0, height - this.paddleH);
-  }
-
-  // Change paddle colours
-  setPaddleColours(c1, c2) {
-    this.paddle1Colour = color(c1);
-    this.paddle2Colour = color(c2);
-  }
-
-  // Change ball speed (keeps current direction)
-  setBallSpeed(speed) {
-    const sx = this.ballXSpeed === 0 ? 1 : Math.sign(this.ballXSpeed);
-    const sy = this.ballYSpeed === 0 ? 1 : Math.sign(this.ballYSpeed);
-    this.ballXSpeed = speed * sx;
-    this.ballYSpeed = speed * sy;
-  }
-
-  // Change paddle speed
-  setPaddleSpeed(speed) {
-    this.paddleSpeed = speed;
-  }
-
-  // Turn built-in paddle collision ON/OFF
-  enablePaddleCollision() {
-    this.usePaddleCollision = true;
-  }
-
-  disablePaddleCollision() {
-    this.usePaddleCollision = false;
-  }
-
-  // Turn built-in top/bottom wall bounce ON/OFF
-  enableWallBounce() {
-    this.useWallBounce = true;
-  }
-
-  disableWallBounce() {
-    this.useWallBounce = false;
-  }
-
-  // Check which paddle (if any) was hit
-  // returns "left", "right" or "none"
-  checkPaddleHit() {
-    return this._detectPaddleHit();
-  }
-
-  // Check which wall (if any) was hit
-  // returns "left", "right", "top", "bottom" or "none"
-  checkWallHit() {
-    return this._detectWallHit();
-  }
-
-  // Reset ball to centre and reverse X direction
-  resetBall() {
-    this.ballX = width / 2;
-    this.ballY = height / 2;
-    this.ballXSpeed *= -1;
-  }
-
-  // ============= GAME LOOP METHODS =============
-
-  update() {
-    this._moveBall();
-    if (this.useWallBounce) {
-      this._autoWallBounce();
-    }
-    this._handleInput();
-    this._keepPaddlesOnScreen();
-    if (this.usePaddleCollision) {
-      this._autoPaddleBounce();
-    }
-  }
-
-  show() {
-    // Ball
-    fill(255);
-    circle(this.ballX, this.ballY, this.ballSize);
-
-    // Paddles
-    fill(this.paddle1Colour);
-    rect(this.paddle1X, this.paddle1Y, this.paddleW, this.paddleH);
-
-    fill(this.paddle2Colour);
-    rect(this.paddle2X, this.paddle2Y, this.paddleW, this.paddleH);
-
-    // Centre line
-    stroke(255);
-    line(width / 2, 0, width / 2, height);
-    noStroke();
-  }
-
-  // ============= INTERNAL HELPERS =============
-
-  _moveBall() {
-    this.ballX += this.ballXSpeed;
-    this.ballY += this.ballYSpeed;
-  }
-
-  _handleInput() {
-    // W/S for left paddle
-    if (keyIsDown(87)) { // 'W'
-      this.paddle1Y -= this.paddleSpeed;
-    }
-    if (keyIsDown(83)) { // 'S'
-      this.paddle1Y += this.paddleSpeed;
-    }
-
-    // UP/DOWN arrows for right paddle
-    if (keyIsDown(UP_ARROW)) {
-      this.paddle2Y -= this.paddleSpeed;
-    }
-    if (keyIsDown(DOWN_ARROW)) {
-      this.paddle2Y += this.paddleSpeed;
-    }
-  }
-
-  _keepPaddlesOnScreen() {
-    this.paddle1Y = constrain(this.paddle1Y, 0, height - this.paddleH);
-    this.paddle2Y = constrain(this.paddle2Y, 0, height - this.paddleH);
-  }
-
-  // Just handles auto bounce on top/bottom
-  _autoWallBounce() {
-    const wall = this._detectWallHit();
-    if (wall === "top" || wall === "bottom") {
-      this.ballYSpeed *= -1;
-    }
-  }
-
-  _autoPaddleBounce() {
-    const hit = this._detectPaddleHit();
-    if (hit === "left" || hit === "right") {
-      this.ballXSpeed *= -1;
-    }
-  }
-
-  _detectPaddleHit() {
-    // Left paddle
-    const hitLeft =
-      this.ballX - this.ballRadius <= this.paddle1X + this.paddleW &&
-      this.ballY + this.ballRadius >= this.paddle1Y &&
-      this.ballY - this.ballRadius <= this.paddle1Y + this.paddleH;
-
-    if (hitLeft) return "left";
-
-    // Right paddle
-    const hitRight =
-      this.ballX + this.ballRadius >= this.paddle2X &&
-      this.ballY + this.ballRadius >= this.paddle2Y &&
-      this.ballY - this.ballRadius <= this.paddle2Y + this.paddleH;
-
-    if (hitRight) return "right";
-
-    return "none";
-  }
-
-  _detectWallHit() {
-    // Top and bottom use the ball's edges
-    if (this.ballY - this.ballRadius <= 0) {
-      return "top";
-    }
-    if (this.ballY + this.ballRadius >= height) {
-      return "bottom";
-    }
-
-    // Left and right (for scoring) – use inner edges
-    if (this.ballX - this.ballRadius <= 0) {
-      return "left";
-    }
-    if (this.ballX + this.ballRadius >= width) {
-      return "right";
-    }
-
-    return "none";
-  }
-}
+// PongGame class moved to `pong_game.js` (keeps engine separate from student edits)
