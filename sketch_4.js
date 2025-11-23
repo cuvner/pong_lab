@@ -1,6 +1,8 @@
 function setup() {
   createCanvas(400, 300);
-  game = new PongGame({ manualCollision: true });
+  game = new PongGame();
+  game.manualCollision = true;
+
   game.setPaddleColors("orange", "cyan");
   game.setPaddleSpeed(5);
   game.setupScoring();
@@ -21,7 +23,7 @@ function draw() {
     game.reflectFromPaddle("right");
   }
 
-  const wall = game.checkWallHit();
+  let wall = game.checkWallHit();
   if (wall === "left") {
     // right player scored
     game.player2Scored();
