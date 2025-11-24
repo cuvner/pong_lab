@@ -31,6 +31,9 @@ const context = {
   stroke: () => {},
   line: () => {},
   noStroke: () => {},
+  textSize: () => {},
+  textAlign: () => {},
+  text: () => {},
 
   console,
 };
@@ -67,16 +70,32 @@ try {
     "setRightPaddle",
     "setPaddleColors",
     "setBallSpeed",
+    "setBallSize",
     "setPaddleSpeed",
     "setPaddleCollisionEnabled",
+    "setManualCollision",
+    "setupScoring",
+    "setScoringEnabled",
     "checkPaddleHit",
     "checkWallHit",
+    "consumePaddleHit",
+    "clearPaddleHit",
+    "getPaddleContactFraction",
+    "consumeWallHit",
+    "getScores",
+    "getPlayerScore",
+    "player1Scored",
+    "player2Scored",
+    "manualCollisionAssist",
     "resetBall",
     "bounceHorizontal",
     "bounceVertical",
     "bounceFrom",
+    "bounceLeft",
+    "bounceRight",
+    "bounceTop",
+    "bounceBottom",
     "reflectFromPaddle",
-    "setManualCollision",
     "update",
     "show",
   ];
@@ -89,13 +108,23 @@ try {
     );
   });
 
-  // Call a few methods to ensure they run without throwing
+  // Call a few methods to ensure they run without throwing and affect state
   game.setLeftPaddle(10, 10);
   game.setRightPaddle(380, 10);
   game.setBallSpeed(4);
+  game.setBallSize(20);
   game.setPaddleSpeed(5);
   game.setPaddleCollisionEnabled(false);
   game.update();
+
+  // Manual collision toggle should flip the paddle collision flag
+  assert.strictEqual(game.usePaddleCollision, false);
+  game.setManualCollision(true);
+  assert.strictEqual(game.usePaddleCollision, false);
+  assert.strictEqual(game.manualCollision, true);
+  game.setManualCollision(false);
+  assert.strictEqual(game.usePaddleCollision, true);
+  assert.strictEqual(game.manualCollision, false);
 
   // Construct with the manualCollision option and verify it disables paddle collisions
   const game2 = new (vm.runInContext("PongGame", context))({
@@ -109,6 +138,34 @@ try {
       "Constructor option { manualCollision: true } should disable paddle collisions"
     );
   }
+
+  // manualCollisionAssist should detect a paddle hit and return useful info
+  game2.paddle1X = 0;
+  game2.paddle1Y = 100;
+  game2.ballX = game2.paddle1X + game2.paddleW - game2.ballRadius;
+  game2.ballY = game2.paddle1Y + game2.paddleH / 2;
+  const assist = game2.manualCollisionAssist();
+  assert.deepStrictEqual(assist.hit, "left");
+  assert.strictEqual(typeof assist.contactFraction, "number");
+
+  // consumeWallHit should only report a wall once until the ball returns
+  game2.ballX = -1;
+  const wall1 = game2.consumeWallHit();
+  const wall2 = game2.checkWallHit();
+  assert.strictEqual(wall1, "left");
+  assert.strictEqual(wall2, "none");
+
+  // Scoring path: enabling scoring and crossing a wall should increment and reset
+  const game3 = new (vm.runInContext("PongGame", context))();
+  game3.setupScoring();
+  const canvasWidth = context.width;
+  game3.ballX = canvasWidth - game3.ballRadius; // will move beyond the right wall on update
+  game3.ballXSpeed = Math.abs(game3.ballXSpeed) || 3;
+  game3.update();
+  const scores = game3.getScores();
+  assert.strictEqual(scores.player1, 1);
+  assert.strictEqual(scores.player2, 0);
+  assert.strictEqual(game3.ballX, canvasWidth / 2);
 
   console.log("SMOKE TEST: PASS");
   process.exit(0);
